@@ -1,20 +1,27 @@
 import { Socket } from "socket.io";
 const options = {
   cors: {
-    origin: ["http://75.136.67.139", "http://localhost"],
+    origin: ["http://75.136.67.139", "http://localhost", "https://games.dalkson.com"],
     methods: ["GET", "POST"]
   }
 };
 const io = require("socket.io")(1234, options
 );
 
+
+type Player = {
+  username: string;
+  id: string;
+}
+
 type Room = {
   roomNumber: number;
-  players: string[];
+  players: Player[];
   turn: number;
   board: number[][];
   state: string;
 }
+
 let rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
@@ -23,17 +30,20 @@ io.on("connection", (socket: Socket) => {
     console.log("user disconnected", socket.id);
   });
 
-  socket.on("join", (roomNumber: number) => {
+  socket.on("join", (roomNumber: number, username: string) => {
     let state = roomState(roomNumber);
     if (state == 1) {
       socket.join(String(roomNumber));
       let room: Room = rooms[roomIndex(roomNumber)];
-      room.players.push(socket.id);
+      room.players.push({username: username, id: socket.id});
       socket.emit("joined", roomNumber, room.players.length);
-      if (room.players.length == 3) {
-        room.state = "inplay";
-        io.to(String(roomNumber)).emit("gamestart");
+      var randomnumber = Math.floor(Math.random() * (room.players.length - 1 + 1)) + 1;
+      room.turn = randomnumber;
+      let usernameList: string[] = [];
+      for (let i = 0; i < room.players.length; i++) {
+        usernameList.push(room.players[i].username);
       }
+      io.to(String(roomNumber)).emit("players", usernameList);
     } else if (state == 2) {
       socket.emit("joined", -2);
     } else {
@@ -41,14 +51,14 @@ io.on("connection", (socket: Socket) => {
     }
   });
 
-  socket.on("host", () => {
+  socket.on("host", (username: string) => {
     let roomNumber = Math.floor(1000 + Math.random() * 9000);
     if(rooms.length != 0 ) {
       while (roomState(roomNumber) != 0) {
           roomNumber = Math.floor(1000 + Math.random() * 9000);
       }
     }
-    rooms.push({roomNumber: roomNumber, players: [socket.id], turn: 1, board: [
+    rooms.push({roomNumber: roomNumber, players: [{username: username, id: socket.id}], turn: 1, board: [
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -63,7 +73,17 @@ io.on("connection", (socket: Socket) => {
     ], state: "waiting"});
     socket.join(String(roomNumber));
     socket.emit("joined", roomNumber, 1)
+    let usernameList: string[] = [username];
+    io.to(String(roomNumber)).emit("players", usernameList);
   });
+
+  socket.on("startGame", (roomNumber: number) => {
+    if (roomNumber == 0) {return;}
+    let room = rooms[roomIndex(roomNumber)];
+    if (room.players[0].id != socket.id) {return;}
+    room.state = "inplay";
+    io.to(String(roomNumber)).emit("gamestart", room.turn);
+  })
 
   socket.on("rematch", (roomNumber: number) => {
     if (roomNumber != 0) {
@@ -75,36 +95,32 @@ io.on("connection", (socket: Socket) => {
     }
   })
 
-  socket.on("dropDisk", (column: number, roomNumber: number) => {
-    if (roomNumber != 0) {
-      let room = rooms[roomIndex(roomNumber)]
-      if (room.state == "inplay") {
-        let player = room.players.indexOf(socket.id) + 1;
-        if (player == room.turn) {
-          io.to(String(roomNumber)).emit("droppedDisk", player, column);
-          dropDisk(player, column, room);
-          checkWin(roomNumber);
-          switch (room.turn) {
-            case 1:
-              room.turn = 2;
-              break;
-            case 2:
-              room.turn = 3;
-              break;
-            case 3:
-              room.turn = 1;
-              break;
-          }
-        };
+  socket.on("dropDisk", function (column: number, roomNumber: number): void {
+    if (roomNumber == 0) {return;}
+    let room = rooms[roomIndex(roomNumber)]
+    if (room.state != "inplay") {return;}
+    let players = room.players;
+    let player: number;
+    for (let i = 0; i < players.length; i++) {
+      if (players[i].id == socket.id) {
+        player = i + 1;
       }
     }
+    if (player != room.turn) {return;}
+    if (isFull(room, column)) {return;}
+    dropDisk(player, column, room);
+    checkWin(roomNumber);
+    if (room.turn < players.length) {
+      room.turn++;
+    } else {room.turn = 1;}
+    io.to(String(roomNumber)).emit("droppedDisk", player, column, room.turn);
   });
 });
 
 function roomState(roomNumber: number): number {
   for (const room of rooms) {
     if(room.roomNumber == roomNumber) {
-      if(room.players.length == 3) {
+      if(room.players.length == 6) {
         return 2; // full
       }
       return 1; // exist not full
@@ -123,6 +139,7 @@ function roomIndex(roomNumber: number): number {
 }
 
 function checkWin(roomNumber: number): void {
+  console.log("checkWin");
   let room = rooms[roomIndex(roomNumber)];
   let emptyCells = 0;
   let winner = 0;
@@ -155,6 +172,7 @@ function checkWin(roomNumber: number): void {
     x++;
   });
   if (winner != 0) {
+    console.log("game is over " + winner);
     io.to(String(roomNumber)).emit("gameover", winner);
     room.state = "over";
   }
@@ -189,4 +207,8 @@ function clearBoard(room: Room) {
     [0, 0, 0, 0, 0, 0, 0, 0, 0]
   ];
   room.state = "inplay";
+}
+
+function isFull(room: Room, column: number): boolean {
+  if (room.board[column][0] == 0) {return false;} else {return true;}
 }

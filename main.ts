@@ -14,8 +14,8 @@ const colors = ["#FFFFFF", "#FF0000", "#FBFF00", "orange", "#04857F", "#359A2E",
 let playerNumber = 0;
 let usernameList: string[] = [];
 
-document.getElementById("rematchButton").style.display = 'none';
-document.getElementById("startButton").style.display = 'none';
+document.getElementById("rematchButton").style.display = "none";
+document.getElementById("startButton").style.display = "none";
 
 import { io } from "socket.io-client";
 
@@ -35,14 +35,14 @@ socket.on("joined", (room: number, player: number) => {
     return;
   }
   if (room == -2) {
-    currentTextState = "Room Full"
+    currentTextState = "Room Full";
     return;
   }
   currentTextState = "room: " + String(room);
   currentRoom = room;
   playerNumber = player;
   board = createBoard(16, 10);
-  lobbyUI()
+  lobbyUI();
 });
 
 socket.on("players", (userList: string[]) => {
@@ -50,12 +50,12 @@ socket.on("players", (userList: string[]) => {
 })
 
 socket.on("gamestart", (turn: number) => {
-  gameStartUI()
+  gameStartUI();
   playerNumber == turn ? currentTextState = "Your Turn!" : currentTextState = "Player" + turn + "'s Turn";
 })
 
 socket.on("gameover", (player: number) => {
-  document.getElementById("rematchButton").style.display = '';
+  document.getElementById("rematchButton").style.display = "";
   console.log("game is over " + player);
 
   setTimeout(() => {  switch (player) {
@@ -75,7 +75,7 @@ socket.on("gameover", (player: number) => {
 
 
 socket.on("rematch", (turn: number) => {
-  document.getElementById("rematchButton").style.display = 'none';
+  document.getElementById("rematchButton").style.display = "none";
   playerNumber == turn ? currentTextState = "Your Turn" : currentTextState = "Player" + turn + "'s Turn";
   board = createBoard(16, 10);
 })
@@ -87,32 +87,32 @@ socket.on("droppedDisk", (player: number, column: number, turn: number) => {
 })
 
 
-let joinButton = document.getElementById("joinButton");
-joinButton.addEventListener("click", (e:Event) => {
-  var roomCode = Number((<HTMLInputElement>document.getElementById("joinID")).value);
-  var username = String((<HTMLInputElement>document.getElementById("username")).value);
-  if (username == '') {
-    currentTextState = "Enter Name"
+const joinButton = document.getElementById("joinButton");
+joinButton.addEventListener("click", () => {
+  const roomCode = Number((<HTMLInputElement>document.getElementById("joinID")).value);
+  const username = String((<HTMLInputElement>document.getElementById("username")).value);
+  if (username == "") {
+    currentTextState = "Enter Name";
   } else{socket.emit("join", roomCode, username);}
 });
 
-let hostButton = document.getElementById("hostButton");
-hostButton.addEventListener("click", (e:Event) => {
-  var username = String((<HTMLInputElement>document.getElementById("username")).value);
-  if (username == '') {
-    currentTextState = "Enter Name"
+const hostButton = document.getElementById("hostButton");
+hostButton.addEventListener("click", () => {
+  const username = String((<HTMLInputElement>document.getElementById("username")).value);
+  if (username == "") {
+    currentTextState = "Enter Name";
   } else{
     socket.emit("host", (username));
-    document.getElementById("startButton").style.display = '';}
+    document.getElementById("startButton").style.display = "";}
 });
 
-let rematchButton = document.getElementById("rematchButton");
-rematchButton.addEventListener("click", (e:Event) => {
+const rematchButton = document.getElementById("rematchButton");
+rematchButton.addEventListener("click", () => {
   socket.emit("rematch", (currentRoom));
 });
 
-let startButton = document.getElementById("startButton");
-startButton.addEventListener("click", (e:Event) => {
+const startButton = document.getElementById("startButton");
+startButton.addEventListener("click", () => {
   socket.emit("startGame", (currentRoom));
 });
 
@@ -127,7 +127,7 @@ function printMousePos(event: MouseEvent): void {
         column = c;
       }
     }
-    socket.emit("dropDisk", column, currentRoom)
+    socket.emit("dropDisk", column, currentRoom);
   }
 }
 
@@ -149,7 +149,7 @@ function drawText(text: string): void {
   ctx.fillStyle = "black";
   ctx.fillRect(10, 10, 320, 75);
   ctx.fillStyle = "red";
-  ctx.font = `40px Verdana`;
+  ctx.font = "40px Verdana";
   ctx.fillText(text, 20, 60);
 }
 
@@ -157,14 +157,14 @@ function drawPlayer(username: string, i: number): void {
   ctx.fillStyle = colors[i+1];
   ctx.fillRect(10, 95 + (i * 70), 150, 60);
   ctx.fillStyle = "black";
-  ctx.font = `30px Verdana`;
+  ctx.font = "30px Verdana";
   ctx.fillText(username, 20, 135 + (i * 70));
   
 }
 
 function drawPlayers(usernameList: string[]) {
   for (let i = 0; i < usernameList.length; i++) {
-    drawPlayer(usernameList[i], i)
+    drawPlayer(usernameList[i], i);
   }
 }
 
@@ -175,7 +175,7 @@ function drawBoard(): void {
   board.forEach(column => {
     let y = 125;
     column.forEach(cell => {
-      drawCircle(x, y, 30, colors[cell])
+      drawCircle(x, y, 30, colors[cell]);
       y += rowGap;
     });
     x += rowGap;
@@ -202,26 +202,26 @@ function drawCircle(x: number, y: number, raduis: number, color: string): void {
 }
 
 function gameStartUI() {
-  document.getElementById("joinButton").style.display = 'none';
-  document.getElementById("hostButton").style.display = 'none';
-  document.getElementById("joinID").style.display = 'none';
-  document.getElementById("username").style.display = 'none';
-  document.getElementById("rematchButton").style.display = 'none';
-  document.getElementById("startButton").style.display = 'none';
+  document.getElementById("joinButton").style.display = "none";
+  document.getElementById("hostButton").style.display = "none";
+  document.getElementById("joinID").style.display = "none";
+  document.getElementById("username").style.display = "none";
+  document.getElementById("rematchButton").style.display = "none";
+  document.getElementById("startButton").style.display = "none";
 }
 
 function lobbyUI() {
-  document.getElementById("joinButton").style.display = 'none';
-  document.getElementById("hostButton").style.display = 'none';
-  document.getElementById("joinID").style.display = 'none';
-  document.getElementById("username").style.display = 'none';
-  document.getElementById("rematchButton").style.display = 'none';
+  document.getElementById("joinButton").style.display = "none";
+  document.getElementById("hostButton").style.display = "none";
+  document.getElementById("joinID").style.display = "none";
+  document.getElementById("username").style.display = "none";
+  document.getElementById("rematchButton").style.display = "none";
 }
 
 function createBoard(x: number, y: number): number[][] {
-  let board: number[][] = []
+  const board: number[][] = [];
   for (let j = 0; j < x; j++) {
-    board.push([])
+    board.push([]);
     for (let k = 0; k < y; k++) {
       board[j][k] = 0;
     }
@@ -231,4 +231,4 @@ function createBoard(x: number, y: number): number[][] {
 
 
 
-main()
+main();

@@ -1,5 +1,5 @@
-const height: number = 780;
-const width: number = 1000;
+const width: number = document.body.clientWidth;
+const height: number = document.body.clientHeight;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = width;
 canvas.height = height;
@@ -9,7 +9,7 @@ let currentTextState: string = "Not in Room";
 let currentRoom: number = 0;
 
 const rowGap = 70;
-const colors = ["#FFFFFF", "#FF0000", "#FBFF00", "orange", "#04857F", "#359A2E", "magenta"]
+const colors = ["#FFFFFF", "#FF0000", "#FBFF00", "orange", "#04857F", "#359A2E", "magenta", "#0B0B6F"]
 
 let playerNumber = 0;
 let usernameList: string[] = [];
@@ -41,7 +41,7 @@ socket.on("joined", (room: number, player: number) => {
   currentTextState = "room: " + String(room);
   currentRoom = room;
   playerNumber = player;
-  clearBoard();
+  board = createBoard(16, 10);
   lobbyUI()
 });
 
@@ -51,7 +51,7 @@ socket.on("players", (userList: string[]) => {
 
 socket.on("gamestart", (turn: number) => {
   gameStartUI()
-  playerNumber == turn ? currentTextState = "Your Turn" : currentTextState = "Player" + turn + "'s Turn";
+  playerNumber == turn ? currentTextState = "Your Turn!" : currentTextState = "Player" + turn + "'s Turn";
 })
 
 socket.on("gameover", (player: number) => {
@@ -77,7 +77,7 @@ socket.on("gameover", (player: number) => {
 socket.on("rematch", (turn: number) => {
   document.getElementById("rematchButton").style.display = 'none';
   playerNumber == turn ? currentTextState = "Your Turn" : currentTextState = "Player" + turn + "'s Turn";
-  clearBoard();
+  board = createBoard(16, 10);
 })
 
 socket.on("droppedDisk", (player: number, column: number, turn: number) => {
@@ -116,27 +116,14 @@ startButton.addEventListener("click", (e:Event) => {
   socket.emit("startGame", (currentRoom));
 });
 
-let board: number[][] = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0]
-];
-
+let board: number[][] = createBoard(16, 10);
 
 
 function printMousePos(event: MouseEvent): void {
-  if (event.clientY >= 100 && event.clientY <= 780 && event.clientX <= 850 && event.clientX >= 60) {
+  if (event.clientY >= 90 && event.clientX >= 160) {
     let column = 0
     for (let c = 0; c < board.length; c++) {
-      if (event.clientX >= (rowGap * (c + 1) + 1) && event.clientX <= (rowGap * 2) * (c + 1)) {
+      if (event.clientX >= (rowGap * (c + 1) + 1) + 95 && event.clientX <= (rowGap * 2) * (c + 1) + 95) {
         column = c;
       }
     }
@@ -160,18 +147,18 @@ function main(): void {
 
 function drawText(text: string): void {
   ctx.fillStyle = "black";
-  ctx.fillRect(230, 20, 320, 75);
+  ctx.fillRect(10, 10, 320, 75);
   ctx.fillStyle = "red";
   ctx.font = `40px Verdana`;
-  ctx.fillText(text, 250, 70);
+  ctx.fillText(text, 20, 60);
 }
 
 function drawPlayer(username: string, i: number): void {
   ctx.fillStyle = colors[i+1];
-  ctx.fillRect(840, 150 + (i * 70), 150, 60);
+  ctx.fillRect(10, 95 + (i * 70), 150, 60);
   ctx.fillStyle = "black";
   ctx.font = `30px Verdana`;
-  ctx.fillText(username, 850, 190 + (i * 70));
+  ctx.fillText(username, 20, 135 + (i * 70));
   
 }
 
@@ -183,10 +170,10 @@ function drawPlayers(usernameList: string[]) {
 
 function drawBoard(): void {
   ctx.fillStyle = "#0B0B6F";
-  ctx.fillRect(0, 0, 1500, 780);
-  let x = 100;
+  ctx.fillRect(0, 0, width, height);
+  let x = 200;
   board.forEach(column => {
-    let y = 175;
+    let y = 125;
     column.forEach(cell => {
       drawCircle(x, y, 30, colors[cell])
       y += rowGap;
@@ -214,22 +201,6 @@ function drawCircle(x: number, y: number, raduis: number, color: string): void {
   ctx.fill();
 }
 
-function clearBoard() {
-  board = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0]
-  ];
-}
-
 function gameStartUI() {
   document.getElementById("joinButton").style.display = 'none';
   document.getElementById("hostButton").style.display = 'none';
@@ -246,5 +217,18 @@ function lobbyUI() {
   document.getElementById("username").style.display = 'none';
   document.getElementById("rematchButton").style.display = 'none';
 }
+
+function createBoard(x: number, y: number): number[][] {
+  let board: number[][] = []
+  for (let j = 0; j < x; j++) {
+    board.push([])
+    for (let k = 0; k < y; k++) {
+      board[j][k] = 0;
+    }
+  }
+  return board;
+}
+
+
 
 main()

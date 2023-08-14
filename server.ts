@@ -58,19 +58,7 @@ io.on("connection", (socket: Socket) => {
           roomNumber = Math.floor(1000 + Math.random() * 9000);
       }
     }
-    rooms.push({roomNumber: roomNumber, players: [{username: username, id: socket.id}], turn: 1, board: [
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    ], state: "waiting"});
+    rooms.push({roomNumber: roomNumber, players: [{username: username, id: socket.id}], turn: 1, board: createBoard(20, 10), state: "waiting"});
     socket.join(String(roomNumber));
     socket.emit("joined", roomNumber, 1)
     let usernameList: string[] = [username];
@@ -89,7 +77,8 @@ io.on("connection", (socket: Socket) => {
     if (roomNumber != 0) {
       let room: Room = rooms[roomIndex(roomNumber)];
       if (room.state == "over") {
-        clearBoard(room);
+        room.board = createBoard(20, 10);
+        room.state = "inplay";
         io.to(String(roomNumber)).emit("rematch", room.turn);
       }
     }
@@ -148,23 +137,21 @@ function checkWin(roomNumber: number): void {
     let y = 0;
     column.forEach(cell => {
       if(cell != 0) {
-        if(x <= 3) {
+        try {
           if(cell == room.board[x+1][y] && cell == room.board[x+2][y] && cell == room.board[x+3][y]) {
             winner = cell;
           }
-        }
-        if(cell == room.board[x][y+1] && cell == room.board[x][y+2] && cell == room.board[x][y+3]) {
-          winner = cell;
-        }
-        if(x <= 3) {
+          if(cell == room.board[x][y+1] && cell == room.board[x][y+2] && cell == room.board[x][y+3]) {
+            winner = cell;
+          }
           if(cell == room.board[x+1][y-1] && cell == room.board[x+2][y-2] && cell == room.board[x+3][y-3]) {
             winner = cell;
           }
-        }
-        if(x >= 3) {
           if(cell == room.board[x-1][y-1] && cell == room.board[x-2][y-2] && cell == room.board[x-3][y-3]) {
             winner = cell;
           }
+        } catch (error) {
+          
         }
       } else {emptyCells++}
       y++;
@@ -192,23 +179,18 @@ function dropDisk(player: number, column: number, room: Room): void {;
   }
 }
 
-function clearBoard(room: Room) {
-  room.board = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0]
-  ];
-  room.state = "inplay";
-}
-
 function isFull(room: Room, column: number): boolean {
   if (room.board[column][0] == 0) {return false;} else {return true;}
+}
+
+function createBoard(x: number, y: number): number[][] {
+  let board: number[][] = []
+  for (let j = 0; j < x+1; j++) {
+    board.push([])
+    for (let k = 0; k < y; k++) {
+      board[j][k] = 0
+    }
+  }
+  return board;
+
 }

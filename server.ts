@@ -22,24 +22,24 @@ type Room = {
   state: string;
 }
 
-let rooms: Room[] = [];
+const rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
   console.log("user connected", socket.id);
-  socket.on("disconnect", (reason) => {
+  socket.on("disconnect", () => {
     console.log("user disconnected", socket.id);
   });
 
   socket.on("join", (roomNumber: number, username: string) => {
-    let state = roomState(roomNumber);
+    const state = roomState(roomNumber);
     if (state == 1) {
       socket.join(String(roomNumber));
-      let room: Room = rooms[roomIndex(roomNumber)];
+      const room: Room = rooms[roomIndex(roomNumber)];
       room.players.push({username: username, id: socket.id});
       socket.emit("joined", roomNumber, room.players.length);
-      var randomnumber = Math.floor(Math.random() * (room.players.length - 1 + 1)) + 1;
+      const randomnumber = Math.floor(Math.random() * (room.players.length - 1 + 1)) + 1;
       room.turn = randomnumber;
-      let usernameList: string[] = [];
+      const usernameList: string[] = [];
       for (let i = 0; i < room.players.length; i++) {
         usernameList.push(room.players[i].username);
       }
@@ -55,27 +55,27 @@ io.on("connection", (socket: Socket) => {
     let roomNumber = Math.floor(1000 + Math.random() * 9000);
     if(rooms.length != 0 ) {
       while (roomState(roomNumber) != 0) {
-          roomNumber = Math.floor(1000 + Math.random() * 9000);
+        roomNumber = Math.floor(1000 + Math.random() * 9000);
       }
     }
     rooms.push({roomNumber: roomNumber, players: [{username: username, id: socket.id}], turn: 1, board: createBoard(20, 10), state: "waiting"});
     socket.join(String(roomNumber));
-    socket.emit("joined", roomNumber, 1)
-    let usernameList: string[] = [username];
+    socket.emit("joined", roomNumber, 1);
+    const usernameList: string[] = [username];
     io.to(String(roomNumber)).emit("players", usernameList);
   });
 
   socket.on("startGame", (roomNumber: number) => {
     if (roomNumber == 0) {return;}
-    let room = rooms[roomIndex(roomNumber)];
+    const room = rooms[roomIndex(roomNumber)];
     if (room.players[0].id != socket.id) {return;}
     room.state = "inplay";
     io.to(String(roomNumber)).emit("gamestart", room.turn);
-  })
+  });
 
   socket.on("rematch", (roomNumber: number) => {
     if (roomNumber != 0) {
-      let room: Room = rooms[roomIndex(roomNumber)];
+      const room: Room = rooms[roomIndex(roomNumber)];
       if (room.state == "over") {
         room.board = createBoard(20, 10);
         room.state = "inplay";
@@ -86,9 +86,9 @@ io.on("connection", (socket: Socket) => {
 
   socket.on("dropDisk", function (column: number, roomNumber: number): void {
     if (roomNumber == 0) {return;}
-    let room = rooms[roomIndex(roomNumber)]
+    const room = rooms[roomIndex(roomNumber)];
     if (room.state != "inplay") {return;}
-    let players = room.players;
+    const players = room.players;
     let player: number;
     for (let i = 0; i < players.length; i++) {
       if (players[i].id == socket.id) {
@@ -129,7 +129,7 @@ function roomIndex(roomNumber: number): number {
 
 function checkWin(roomNumber: number): void {
   console.log("checkWin");
-  let room = rooms[roomIndex(roomNumber)];
+  const room = rooms[roomIndex(roomNumber)];
   let emptyCells = 0;
   let winner = 0;
   let x = 0;
@@ -151,9 +151,8 @@ function checkWin(roomNumber: number): void {
             winner = cell;
           }
         } catch (error) {
-          
-        }
-      } else {emptyCells++}
+}
+      } else {emptyCells++;}
       y++;
     });
     x++;
@@ -169,12 +168,12 @@ function checkWin(roomNumber: number): void {
   }
 }
 
-function dropDisk(player: number, column: number, room: Room): void {;
+function dropDisk(player: number, column: number, room: Room): void {
   for (let index = room.board[column].length - 1; index >= 0; index--) {
     const cell = room.board[column][index];
     if(cell == 0) {
       room.board[column][index] = player;
-        return;
+      return;
     }
   }
 }
@@ -184,11 +183,11 @@ function isFull(room: Room, column: number): boolean {
 }
 
 function createBoard(x: number, y: number): number[][] {
-  let board: number[][] = []
+  const board: number[][] = [];
   for (let j = 0; j < x+1; j++) {
-    board.push([])
+    board.push([]);
     for (let k = 0; k < y; k++) {
-      board[j][k] = 0
+      board[j][k] = 0;
     }
   }
   return board;
